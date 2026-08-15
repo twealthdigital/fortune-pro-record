@@ -16,7 +16,11 @@
   --shadow: 0 25px 60px -10px rgba(0,0,0,0.9);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+button, .dropdown-btn, .dropdown-option, .clarity-toggle-btn, .mobile-record-option, .mobile-record-cancel {
+  touch-action: manipulation;
+}
 
 body {
   background: #000000;
@@ -674,4 +678,46 @@ button:disabled {
   border: 1px solid var(--border-soft);
   color: var(--muted);
   margin-top: 0.2rem;
+}
+
+.desktop-only-gate {
+  position: fixed;
+  inset: 0;
+  background: #000000;
+  z-index: 999999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.desktop-only-gate.active {
+  display: flex;
+}
+
+.desktop-only-gate-content svg {
+  width: 56px;
+  height: 56px;
+  color: var(--orange);
+  margin-bottom: 1.2rem;
+}
+
+.desktop-only-gate-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.8rem;
+  letter-spacing: -0.01em;
+}
+
+.desktop-only-gate-content p {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+body.gate-active .container {
+  display: none;
 }

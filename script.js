@@ -1,4 +1,30 @@
 (function() {
+  // ============ DESKTOP-ONLY GATE ============
+  // Combines multiple signals (touch capability, pointer type, UA) rather
+  // than just screen width, so it can't be dodged by resizing a browser
+  // window or requesting "desktop site" on a phone.
+  function isLikelyMobileOrTablet() {
+    const ua = navigator.userAgent || '';
+    const uaMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet|Silk|BlackBerry|Opera Mini|IEMobile/i.test(ua);
+    const uaDataMobile = navigator.userAgentData ? !!navigator.userAgentData.mobile : false;
+    const touchCapable = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+    const coarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const noHover = window.matchMedia && window.matchMedia('(hover: none)').matches;
+    const narrowViewport = Math.min(window.innerWidth, window.innerHeight) <= 900;
+
+    if (uaMobile || uaDataMobile) return true;
+    if (coarsePointer && touchCapable) return true;
+    if (noHover && touchCapable && narrowViewport) return true;
+    return false;
+  }
+
+  if (isLikelyMobileOrTablet()) {
+    const gate = document.getElementById('desktopOnlyGate');
+    if (gate) gate.classList.add('active');
+    document.body.classList.add('gate-active');
+    return; // stops here — nothing below ever runs, so no listeners exist to click
+  }
+
   // ============ DOM ELEMENTS ============
   const startBtn = document.getElementById('startBtn');
   const stopBtn = document.getElementById('stopBtn');

@@ -7,6 +7,19 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Desktop-only gate — shown instead of the app on touch/mobile/tablet devices -->
+  <div class="desktop-only-gate" id="desktopOnlyGate">
+    <div class="desktop-only-gate-content">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <path d="M8 21h8"/>
+        <path d="M12 17v4"/>
+      </svg>
+      <h1>Desktop Only</h1>
+      <p>This recorder needs a desktop browser's screen-capture support.<br>Please open it on a computer instead.</p>
+    </div>
+  </div>
+
   <div class="container">
     <div class="header">
       <h1>
