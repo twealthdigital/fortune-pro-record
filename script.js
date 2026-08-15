@@ -5,6 +5,10 @@
   const pauseBtn = document.getElementById('pauseBtn');
   const pauseLabel = document.getElementById('pauseLabel');
   const floatControlsBtn = document.getElementById('floatControlsBtn');
+  const mobileRecordModal = document.getElementById('mobileRecordModal');
+  const recordFrontCamBtn = document.getElementById('recordFrontCamBtn');
+  const recordBackCamBtn = document.getElementById('recordBackCamBtn');
+  const mobileRecordCancelBtn = document.getElementById('mobileRecordCancelBtn');
   const previewVideo = document.getElementById('previewVideo');
   const placeholder = document.getElementById('placeholder');
   const statusEl = document.getElementById('status');
@@ -639,6 +643,86 @@
     recordedChunks = [];
   }
 
+  // ============ MOBILE FALLBACK: CAMERA RECORDING ============
+  function handleStartClick() {
+    const screenCaptureSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+    if (screenCaptureSupported) {
+      startRecording();
+    } else {
+      mobileRecordModal.classList.add('open');
+    }
+  }
+
+  function closeMobileRecordModal() {
+    mobileRecordModal.classList.remove('open');
+  }
+
+  async function startCameraRecordingFallback(facingMode) {
+    closeMobileRecordModal();
+    try {
+      const config = getQualitySettings();
+
+      screenStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode,
+          width: { ideal: config.width },
+          height: { ideal: config.height },
+          frameRate: { ideal: config.frameRate, max: config.frameRate }
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 2
+        }
+      });
+
+      const videoTrack = screenStream.getVideoTracks()[0];
+      const audioTrack = screenStream.getAudioTracks()[0];
+      combinedStream = new MediaStream(audioTrack ? [videoTrack, audioTrack] : [videoTrack]);
+
+      previewVideo.srcObject = combinedStream;
+      previewVideo.classList.add('active');
+      placeholder.style.display = 'none';
+
+      const mimeType = pickBestMimeType();
+      if (!mimeType) throw new Error('No supported recording format found in this browser');
+      const isMp4 = mimeType.startsWith('video/mp4');
+
+      mediaRecorder = new MediaRecorder(combinedStream, {
+        mimeType,
+        videoBitsPerSecond: config.videoBitrate,
+        audioBitsPerSecond: config.audioBitrate
+      });
+
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = saveRecording;
+      mediaRecorder.start(1000);
+
+      startTime = Date.now();
+      pausedAccum = 0;
+      startTimer();
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      pauseBtn.disabled = false;
+      pauseLabel.textContent = 'Pause';
+      isPaused = false;
+
+      const camLabel = facingMode === 'user' ? 'front camera' : 'back camera';
+      const formatNote = isMp4 ? 'MP4' : 'WebM';
+      statusEl.textContent = `🔴 Recording ${camLabel} @ ${config.frameRate}FPS · ${formatNote}${audioTrack ? ' · mic' : ' · no audio'}`;
+      statusEl.classList.add('recording');
+
+      videoTrack.onended = () => stopRecording();
+    } catch (err) {
+      console.error('Failed to start camera recording:', err);
+      statusEl.textContent = '❌ Failed to start: ' + err.message;
+    }
+  }
+
   function togglePause() {
     if (!mediaRecorder) return;
 
@@ -850,7 +934,11 @@
   }
 
   // ============ EVENT LISTENERS ============
-  startBtn.addEventListener('click', startRecording);
+  startBtn.addEventListener('click', handleStartClick);
+  recordFrontCamBtn.addEventListener('click', () => startCameraRecordingFallback('user'));
+  recordBackCamBtn.addEventListener('click', () => startCameraRecordingFallback('environment'));
+  mobileRecordCancelBtn.addEventListener('click', closeMobileRecordModal);
+  mobileRecordModal.addEventListener('click', (e) => { if (e.target === mobileRecordModal) closeMobileRecordModal(); });
   stopBtn.addEventListener('click', stopRecording);
   pauseBtn.addEventListener('click', togglePause);
   cameraToggleBtn.addEventListener('click', toggleCamera);
@@ -873,8 +961,9 @@
 
   // ============ BROWSER SUPPORT CHECK ============
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-    statusEl.textContent = '❌ Screen recording not supported in this browser';
-    startBtn.disabled = true;
+    statusEl.textContent = "📷 Screen capture isn't available here — Start Recording will offer camera recording instead";
+    const systemAudioWrapper = systemAudioToggleBtn.closest('.tooltip-wrapper');
+    if (systemAudioWrapper) systemAudioWrapper.style.display = 'none';
   }
 
   // Floating controls only exist on desktop Chrome/Edge — hide the button

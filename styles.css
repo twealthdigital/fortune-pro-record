@@ -616,3 +616,62 @@ button:disabled {
     display: none;
   }
 }
+
+
+.mobile-record-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1.5rem;
+}
+
+.mobile-record-modal.open {
+  display: flex;
+}
+
+.mobile-record-modal-box {
+  background: #0d0d0d;
+  border: 1px solid var(--border-strong);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  max-width: 340px;
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+
+.mobile-record-modal-box h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.mobile-record-modal-box p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1.1rem;
+}
+
+.mobile-record-option {
+  width: 100%;
+  justify-content: flex-start;
+  margin-bottom: 0.6rem;
+  background: #141414;
+  border: 1px solid var(--border-strong);
+}
+
+.mobile-record-option:hover {
+  border-color: var(--orange);
+}
+
+.mobile-record-cancel {
+  width: 100%;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--muted);
+  margin-top: 0.2rem;
+}

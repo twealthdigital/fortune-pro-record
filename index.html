@@ -218,6 +218,23 @@
     <div class="status" id="status">✨ Ready for 12K MP4 recording · Ultra Clarity ON</div>
   </div>
 
+  <!-- Mobile camera-record option picker (shown when screen capture isn't supported) -->
+  <div class="mobile-record-modal" id="mobileRecordModal">
+    <div class="mobile-record-modal-box">
+      <h3>Screen capture isn't available here</h3>
+      <p>This browser can't record the screen, but it can still record video with your camera and mic:</p>
+      <button class="mobile-record-option" id="recordFrontCamBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        Front Camera (Selfie)
+      </button>
+      <button class="mobile-record-option" id="recordBackCamBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+        Back Camera
+      </button>
+      <button class="mobile-record-cancel" id="mobileRecordCancelBtn">Cancel</button>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
