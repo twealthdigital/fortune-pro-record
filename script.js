@@ -877,6 +877,14 @@
     startBtn.disabled = true;
   }
 
+  // Floating controls only exist on desktop Chrome/Edge — hide the button
+  // entirely on phones/browsers that can't support it instead of leaving
+  // a dead, disabled button in the UI.
+  if (!('documentPictureInPicture' in window)) {
+    const floatWrapper = floatControlsBtn.closest('.tooltip-wrapper');
+    if (floatWrapper) floatWrapper.style.display = 'none';
+  }
+
   // Initialize camera transform
   updateCameraTransform();
 })();
