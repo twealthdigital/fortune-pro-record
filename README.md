@@ -14,5 +14,9 @@ Click the green **Code** button > **Download ZIP**, or:
 
 To run locally: `python -m http.server 8000` in the folder, then open http://localhost:8000
 
-## Camera bubble extension
+## Drawing tools + camera bubble extension
+Download: https://twealthdigital.github.io/fortune-pro-record/fortune-cam-extension.zip
+Pen, arrow, circle, box, colors, notes (white/black), and your camera bubble on every Chrome tab. See `extension/README.md`.
+
+## Extension folder (manual)
 See the `extension` folder (Chrome > chrome://extensions > Developer mode > Load unpacked).

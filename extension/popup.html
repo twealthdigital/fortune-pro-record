@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body{margin:0;width:270px;background:#0e0e10;color:#f5f2ee;font:13px system-ui,sans-serif;padding:14px}
+  h1{font-size:14px;margin:0 0 12px;color:#ff6b00;letter-spacing:.5px}
+  .row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #26262a}
+  .row small{display:block;color:#8d8d93;margin-top:2px;font-size:11px}
+  .sw{position:relative;width:40px;height:22px;flex:0 0 auto}
+  .sw input{opacity:0;width:0;height:0}
+  .sl{position:absolute;inset:0;background:#3a3a40;border-radius:22px;cursor:pointer;transition:.2s}
+  .sl:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  input:checked + .sl{background:#ff6b00}
+  input:checked + .sl:before{transform:translateX(18px)}
+  .tip{margin-top:10px;color:#8d8d93;font-size:11px;line-height:1.4}
+  kbd{background:#26262a;padding:1px 5px;border-radius:4px;color:#f5f2ee}
+</style>
+</head>
+<body>
+  <h1>FORTUNE PRO RECORD</h1>
+  <div class="row"><div>Camera bubble<small>Your face on every tab</small></div>
+    <label class="sw"><input type="checkbox" id="cam"><span class="sl"></span></label></div>
+  <div class="row"><div>Annotation tools<small>Pen, arrow, circle, notes</small></div>
+    <label class="sw"><input type="checkbox" id="ann"><span class="sl"></span></label></div>
+  <div class="tip">Shortcut: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> shows or hides the tools.<br>Refresh tabs that were open before installing.</div>
+  <script src="popup.js"></script>
+</body>
+</html>

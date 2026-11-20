@@ -1,15 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Fortune Cam Bubble",
-  "version": "1.0.0",
-  "description": "Your camera bubble on every tab while you screen record.",
+  "version": "1.1.0",
+  "description": "Camera bubble and on-screen drawing tools (pen, arrow, circle, notes) on every tab while you screen record.",
   "permissions": ["storage"],
-  "action": { "default_title": "Toggle camera bubble" },
+  "action": { "default_title": "Fortune Pro Record tools", "default_popup": "popup.html" },
   "background": { "service_worker": "background.js" },
+  "commands": {
+    "toggle-annotate": {
+      "suggested_key": { "default": "Alt+Shift+A" },
+      "description": "Show or hide annotation tools"
+    }
+  },
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*", "file:///*"],
-      "js": ["content.js"],
+      "js": ["content.js", "annotate.js"],
       "run_at": "document_idle"
     }
   ],

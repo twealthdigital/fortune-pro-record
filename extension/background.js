@@ -6,11 +6,9 @@ chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') openPermissionPage();
 });
 
-chrome.action.onClicked.addListener(async () => {
-  const { on = false, granted = false } = await chrome.storage.local.get(['on', 'granted']);
-  if (!granted) {
-    openPermissionPage();
-    return;
-  }
-  await chrome.storage.local.set({ on: !on });
+// Keyboard shortcut: show / hide annotation tools on every tab
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== 'toggle-annotate') return;
+  const { annOn = false } = await chrome.storage.local.get('annOn');
+  await chrome.storage.local.set({ annOn: !annOn });
 });
