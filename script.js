@@ -268,6 +268,15 @@
     isCircle = !isCircle;
     cameraContainer.classList.toggle('circle', isCircle);
     if (pipCamVideo) pipCamVideo.classList.toggle('circle', isCircle);
+    if (pipWindow && cameraEnabled) {
+      try {
+        // Square window for the circle so nothing is wasted, 4:3 for the rounded square
+        const chromeH = pipWindow.outerHeight - pipWindow.innerHeight;
+        const w = isCircle ? 300 : 340;
+        const h = isCircle ? 300 : 255;
+        pipWindow.resizeTo(w, h + chromeH);
+      } catch (e) { /* needs user activation, harmless if refused */ }
+    }
     updateCameraTransform();
   }
 
@@ -830,16 +839,17 @@
     const doc = pipWindow.document;
     doc.title = cameraEnabled ? 'Camera' : 'Recorder Controls';
     doc.head.innerHTML = `<style>
-      html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:Inter,system-ui,sans-serif;color:#f5f2ee;}
-      .cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;}
-      .cam.circle{inset:auto;top:50%;left:50%;width:min(100vw,100vh);height:min(100vw,100vh);translate:-50% -50%;border-radius:50%;}
+      html,body{margin:0;height:100%;overflow:hidden;font-family:Inter,system-ui,sans-serif;color:#f5f2ee;background:radial-gradient(circle at 50% 40%,#1c0f05 0%,#0a0a0a 70%);}
+      .cam{position:absolute;box-sizing:border-box;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);object-fit:cover;background:#000;border-radius:20px;border:3px solid #ff6b00;box-shadow:0 0 0 4px rgba(255,107,0,0.25),0 0 28px rgba(255,107,0,0.55);transition:border-radius 0.3s ease;}
+      .cam.circle{inset:auto;top:50%;left:50%;width:calc(min(100vw,100vh) - 20px);height:calc(min(100vw,100vh) - 20px);translate:-50% -50%;border-radius:50%;}
       .bar{display:flex;gap:0.5rem;align-items:center;justify-content:center;}
-      .bar.overlay{position:absolute;left:0;right:0;bottom:0;padding:0.6rem;background:linear-gradient(transparent,rgba(0,0,0,0.85));opacity:0;transition:opacity 0.2s;}
+      .bar.overlay{position:absolute;left:50%;bottom:14px;translate:-50% 0;padding:0.35rem 0.5rem;border-radius:999px;background:rgba(10,10,10,0.82);border:1px solid rgba(255,107,0,0.6);backdrop-filter:blur(6px);opacity:0;transition:opacity 0.2s;white-space:nowrap;}
       body:hover .bar.overlay{opacity:1;}
       .solo{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.6rem;}
-      #pipTimer{font-weight:700;color:#ff6b00;font-family:monospace;font-size:1.2rem;}
+      #pipTimer{font-weight:700;color:#ff6b00;font-family:monospace;font-size:0.95rem;padding:0 0.3rem;}
       .solo #pipTimer{font-size:1.6rem;}
-      button{cursor:pointer;font-weight:700;border-radius:0.8rem;padding:0.5rem 0.9rem;border:1px solid #ff6b00;background:#141414;color:#f5f2ee;font-size:0.8rem;}
+      button{cursor:pointer;font-weight:700;border-radius:999px;padding:0.4rem 0.85rem;border:1px solid #ff6b00;background:#141414;color:#f5f2ee;font-size:0.75rem;}
+      button:hover{background:#ff6b00;color:#000;}
       button.stop{background:#ff4d4d;border-color:#ff4d4d;color:#fff;}
     </style>`;
     doc.body.innerHTML = '';
