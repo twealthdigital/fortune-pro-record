@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>12K Pro Recorder · Camera Overlay</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0b0f">
+  <link rel="icon" href="icon-192.png">
 </head>
 <body>
   <!-- Desktop-only gate — shown instead of the app on touch/mobile/tablet devices -->
@@ -249,5 +252,8 @@
   </div>
 
   <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  </script>
 </body>
 </html>
