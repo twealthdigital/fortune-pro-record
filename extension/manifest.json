@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Fortune Cam Bubble",
+  "version": "1.0.0",
+  "description": "Your camera bubble on every tab while you screen record.",
+  "permissions": ["storage"],
+  "action": { "default_title": "Toggle camera bubble" },
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["bubble.html"], "matches": ["http://*/*", "https://*/*", "file:///*"] }
+  ]
+}
