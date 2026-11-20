@@ -70,6 +70,9 @@
   let mediaRecorder = null;
   let recordedChunks = [];
   let pipWindow = null;
+  let pipCamVideo = null;
+  let floatControlsOn = false;
+  const hasDocPip = 'documentPictureInPicture' in window;
   let screenStream = null;
   let cameraStream = null;
   let micStream = null;
@@ -179,6 +182,16 @@
         stopCameraTracks();
       }
 
+      // Open the always on top window FIRST, while the click's user
+      // activation is still fresh (the camera permission prompt can expire it).
+      if (hasDocPip && !pipWindow) {
+        try {
+          await ensurePipWindow(320, 240);
+        } catch (e) {
+          console.warn('Camera pop out window failed, using in page overlay:', e);
+        }
+      }
+
       cameraStream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1920 },
@@ -189,14 +202,22 @@
       });
 
       cameraVideo.srcObject = cameraStream;
-      cameraContainer.style.display = 'block';
       cameraEnabled = true;
       updateCameraTransform();
-
       cameraToggleBtn.classList.add('active');
 
+      if (pipWindow) {
+        // Floats over every app, so it shows up in entire screen recordings
+        cameraContainer.style.display = 'none';
+        renderPip();
+      } else {
+        cameraContainer.style.display = 'block';
+      }
+
       if (!statusEl.classList.contains('recording')) {
-        statusEl.textContent = '📸 Camera overlay active';
+        statusEl.textContent = pipWindow
+          ? '📸 Camera overlay active (floats over every app)'
+          : '📸 Camera overlay active (use Chrome or Edge 116+ to float it over other apps)';
       }
     } catch (err) {
       console.warn('Camera access denied:', err);
@@ -204,6 +225,7 @@
       cameraEnabled = false;
       cameraContainer.style.display = 'none';
       cameraToggleBtn.classList.remove('active');
+      renderPip();
     }
   }
 
@@ -215,6 +237,7 @@
     cameraContainer.style.display = 'none';
     cameraEnabled = false;
     cameraToggleBtn.classList.remove('active');
+    renderPip();
 
     if (!statusEl.classList.contains('recording')) {
       statusEl.textContent = '📷 Camera overlay off';
@@ -237,12 +260,14 @@
 
   function updateCameraTransform() {
     cameraVideo.style.transform = isMirrored ? 'scaleX(1)' : 'scaleX(-1)';
+    if (pipCamVideo) pipCamVideo.style.scale = isMirrored ? '1 1' : '-1 1';
   }
 
   // ============ SHAPE TOGGLE ============
   function toggleShape() {
     isCircle = !isCircle;
     cameraContainer.classList.toggle('circle', isCircle);
+    if (pipCamVideo) pipCamVideo.classList.toggle('circle', isCircle);
     updateCameraTransform();
   }
 
@@ -628,7 +653,9 @@
     stopBtn.disabled = true;
     pauseBtn.disabled = true;
     floatControlsBtn.disabled = true;
-      if (pipWindow) { pipWindow.close(); pipWindow = null; }
+    floatControlsOn = false;
+    floatControlsBtn.classList.remove('active');
+    renderPip();
     stopTimer();
 
     statusEl.textContent = '⏳ Processing recording…';
@@ -771,51 +798,119 @@
     isPaused = !isPaused;
   }
 
+  // One always on top window is shared by the camera bubble and the
+  // floating controls (browsers only allow one at a time).
+  async function ensurePipWindow(width, height) {
+    if (pipWindow) return pipWindow;
+    const w = await documentPictureInPicture.requestWindow({ width, height });
+    pipWindow = w;
+    w.addEventListener('pagehide', () => {
+      if (pipWindow !== w) return;
+      pipWindow = null;
+      pipCamVideo = null;
+      floatControlsOn = false;
+      floatControlsBtn.classList.remove('active');
+      // Window was closed by the user: fall back to the in page overlay
+      if (cameraEnabled) cameraContainer.style.display = 'block';
+    });
+    return w;
+  }
+
+  function renderPip() {
+    if (!pipWindow) return;
+
+    if (!cameraEnabled && !floatControlsOn) {
+      const w = pipWindow;
+      pipWindow = null;
+      pipCamVideo = null;
+      w.close();
+      return;
+    }
+
+    const doc = pipWindow.document;
+    doc.title = cameraEnabled ? 'Camera' : 'Recorder Controls';
+    doc.head.innerHTML = `<style>
+      html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:Inter,system-ui,sans-serif;color:#f5f2ee;}
+      .cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;}
+      .cam.circle{inset:auto;top:50%;left:50%;width:min(100vw,100vh);height:min(100vw,100vh);translate:-50% -50%;border-radius:50%;}
+      .bar{display:flex;gap:0.5rem;align-items:center;justify-content:center;}
+      .bar.overlay{position:absolute;left:0;right:0;bottom:0;padding:0.6rem;background:linear-gradient(transparent,rgba(0,0,0,0.85));opacity:0;transition:opacity 0.2s;}
+      body:hover .bar.overlay{opacity:1;}
+      .solo{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.6rem;}
+      #pipTimer{font-weight:700;color:#ff6b00;font-family:monospace;font-size:1.2rem;}
+      .solo #pipTimer{font-size:1.6rem;}
+      button{cursor:pointer;font-weight:700;border-radius:0.8rem;padding:0.5rem 0.9rem;border:1px solid #ff6b00;background:#141414;color:#f5f2ee;font-size:0.8rem;}
+      button.stop{background:#ff4d4d;border-color:#ff4d4d;color:#fff;}
+    </style>`;
+    doc.body.innerHTML = '';
+    pipCamVideo = null;
+
+    if (cameraEnabled) {
+      const v = doc.createElement('video');
+      v.className = 'cam' + (isCircle ? ' circle' : '');
+      v.style.scale = isMirrored ? '1 1' : '-1 1';
+      v.autoplay = true;
+      v.muted = true;
+      v.playsInline = true;
+      v.srcObject = cameraStream;
+      doc.body.appendChild(v);
+      pipCamVideo = v;
+      v.play().catch(() => {});
+    }
+
+    if (floatControlsOn) {
+      const timerDiv = doc.createElement('div');
+      timerDiv.id = 'pipTimer';
+      timerDiv.textContent = timerEl.textContent;
+
+      const pauseB = doc.createElement('button');
+      pauseB.id = 'pipPause';
+      pauseB.textContent = pauseLabel.textContent;
+      pauseB.onclick = () => { togglePause(); pauseB.textContent = pauseLabel.textContent; };
+
+      const stopB = doc.createElement('button');
+      stopB.className = 'stop';
+      stopB.textContent = 'Stop & Save';
+      stopB.onclick = () => stopRecording();
+
+      const bar = doc.createElement('div');
+      bar.className = 'bar';
+      bar.append(pauseB, stopB);
+
+      if (cameraEnabled) {
+        // Over the camera: only visible on hover so recordings stay clean
+        const wrap = doc.createElement('div');
+        wrap.className = 'bar overlay';
+        wrap.append(timerDiv, pauseB, stopB);
+        doc.body.appendChild(wrap);
+      } else {
+        const solo = doc.createElement('div');
+        solo.className = 'solo';
+        solo.append(timerDiv, bar);
+        doc.body.appendChild(solo);
+      }
+    }
+  }
+
   async function toggleFloatingControls() {
-    if (pipWindow) { pipWindow.close(); return; }
-    if (!('documentPictureInPicture' in window)) {
+    if (floatControlsOn) {
+      floatControlsOn = false;
+      floatControlsBtn.classList.remove('active');
+      renderPip();
+      return;
+    }
+    if (!hasDocPip) {
       statusEl.textContent = '⚠️ Floating controls need Chrome or Edge 116+';
       return;
     }
     try {
-      pipWindow = await documentPictureInPicture.requestWindow({ width: 260, height: 150 });
-      pipWindow.document.title = 'Recorder Controls';
-      pipWindow.document.body.style.cssText =
-        'margin:0;background:#000;font-family:Inter,system-ui,sans-serif;color:#f5f2ee;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.6rem;height:100%;';
-      pipWindow.document.head.insertAdjacentHTML('beforeend',
-        '<style>button{cursor:pointer;font-weight:700;border-radius:0.8rem;padding:0.6rem 1.1rem;border:1px solid #ff6b00;background:#141414;color:#f5f2ee;font-size:0.85rem;}button.stop{background:#ff4d4d;border-color:#ff4d4d;color:#fff;}</style>');
-
-      const timerDiv = pipWindow.document.createElement('div');
-      timerDiv.id = 'pipTimer';
-      timerDiv.style.cssText = 'font-size:1.6rem;font-weight:700;color:#ff6b00;font-family:monospace;';
-      timerDiv.textContent = timerEl.textContent;
-
-      const row = pipWindow.document.createElement('div');
-      row.style.cssText = 'display:flex;gap:0.6rem;';
-
-      const pipPauseBtn = pipWindow.document.createElement('button');
-      pipPauseBtn.textContent = pauseLabel.textContent;
-      pipPauseBtn.onclick = () => { togglePause(); pipPauseBtn.textContent = pauseLabel.textContent; };
-
-      const pipStopBtn = pipWindow.document.createElement('button');
-      pipStopBtn.className = 'stop';
-      pipStopBtn.textContent = 'Stop & Save';
-      pipStopBtn.onclick = () => stopRecording();
-
-      row.appendChild(pipPauseBtn);
-      row.appendChild(pipStopBtn);
-      pipWindow.document.body.appendChild(timerDiv);
-      pipWindow.document.body.appendChild(row);
-
+      if (!pipWindow) await ensurePipWindow(260, 150);
+      floatControlsOn = true;
       floatControlsBtn.classList.add('active');
-      pipWindow.addEventListener('pagehide', () => {
-        pipWindow = null;
-        floatControlsBtn.classList.remove('active');
-      });
+      renderPip();
     } catch (err) {
       console.warn('Floating controls failed:', err);
       statusEl.textContent = '⚠️ Could not open floating controls';
-      pipWindow = null;
     }
   }
 
@@ -947,6 +1042,8 @@
       if (pipWindow) {
         const pipTimerEl = pipWindow.document.getElementById('pipTimer');
         if (pipTimerEl) pipTimerEl.textContent = timerEl.textContent;
+        const pipPauseEl = pipWindow.document.getElementById('pipPause');
+        if (pipPauseEl) pipPauseEl.textContent = pauseLabel.textContent;
       }
     }, 200);
   }
